@@ -1,101 +1,171 @@
-import Image from "next/image";
+'use client';
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+const App = () => {
+  const mountRef = useRef(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
-}
+  useEffect(() => {
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xffffff, 1); // Set background color to white
+    mountRef.current.appendChild(renderer.domElement);
+
+    // OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Smooth movement
+    controls.dampingFactor = 0.05;
+
+    // Add floor (horizontal plane)
+    const floorGeometry = new THREE.PlaneGeometry(10, 10);
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe0e0e0,
+      side: THREE.DoubleSide,
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2; // Rotate to lie flat
+    scene.add(floor);
+
+    // Add wall (vertical plane)
+    const wallGeometry = new THREE.PlaneGeometry(10, 10);
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0xd3d3d3,
+      side: THREE.DoubleSide,
+    });
+    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall.position.z = -5; // Place behind the box
+    scene.add(wall);
+
+    // Box geometry with shiny material and edges
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x00ff00,
+      roughness: 0.5,
+      metalness: 0.5,
+    });
+    const box = new THREE.Mesh(geometry, material);
+
+    // Add wireframe for black edges
+    const edges = new THREE.EdgesGeometry(geometry);
+    const wireframe = new THREE.LineSegments(
+      edges,
+      new THREE.LineBasicMaterial({ color: 0x000000 })
+    );
+
+    scene.add(box); // Add solid box
+    scene.add(wireframe); // Add black edges
+
+    // Add lights for 3D effect
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1); // Bright point light
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    // Position camera
+    camera.position.set(0, 5, 10);
+    camera.lookAt(0, 0, 0);
+
+    // Dragging functionality
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let isDragging = false;
+    let intersectedObject = null;
+
+    const onMouseDown = (event) => {
+      // Convert mouse position to normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Check for intersections
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(box);
+
+      if (intersects.length > 0) {
+        isDragging = true;
+        intersectedObject = intersects[0].object; // Get the intersected box
+        controls.enabled = false; // Disable OrbitControls during drag
+      }
+    };
+
+    const onMouseMove = (event) => {
+      if (isDragging && intersectedObject) {
+        // Update mouse position
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        // Update raycaster and calculate new position
+        raycaster.setFromCamera(mouse, camera);
+        const planeIntersect = raycaster.ray.intersectPlane(
+          new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), // Horizontal movement plane
+          new THREE.Vector3()
+        );
+
+        if (planeIntersect) {
+          intersectedObject.position.set(
+            planeIntersect.x,
+            intersectedObject.position.y,
+            planeIntersect.z
+          );
+          wireframe.position.set(
+            planeIntersect.x,
+            intersectedObject.position.y,
+            planeIntersect.z
+          ); // Move edges with the box
+        }
+      }
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      intersectedObject = null;
+      controls.enabled = true; // Re-enable OrbitControls
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // Animation loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+
+      // Rotate the box for 3D effect when not dragging
+      if (!isDragging) {
+        box.rotation.x += 0.01;
+        box.rotation.y += 0.01;
+        wireframe.rotation.x += 0.01;
+        wireframe.rotation.y += 0.01;
+      }
+
+      // Update controls
+      controls.update();
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      mountRef.current.removeChild(renderer.domElement);
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
+
+  return <div ref={mountRef}></div>;
+};
+
+export default App;
